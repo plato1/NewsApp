@@ -1,5 +1,8 @@
 package com.abnanodegree.jk.newsapp;
 
+import android.content.Context;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.support.design.widget.NavigationView;
 import android.support.design.widget.Snackbar;
@@ -11,6 +14,11 @@ import android.support.v7.widget.SearchView;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.ListView;
+import android.widget.TextView;
+
+import java.util.ArrayList;
 
 /**
  * https://lab.getbase.com/introduction-to-coordinator-layout-on-android/
@@ -22,19 +30,65 @@ public class MainActivity extends AppCompatActivity
     implements NavigationView.OnNavigationItemSelectedListener {
 
     private static final String LOG_TAG = MainActivity.class.getSimpleName();
+    // create empty arraylist of Book objects into which queried book titles will be placed
+    private ArrayList<News> newsList;
+
     private SearchView searchView;
+    // listview will be handled by ArrayAdapter
+    private ListView lv;
+    //TextView that is displayed when the list is empty...managed by listview
+    private TextView mEmptyStateTextView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        // Restore state members from saved instance
+        if (savedInstanceState == null || !savedInstanceState.containsKey("NEWSLIST")) {
+            newsList = new ArrayList<News>();
+        } else {
+            newsList = savedInstanceState.getParcelableArrayList("NEWSLIST");
+        }
+
         setContentView(R.layout.activity_main);
 
+        // Setup empty view to display when no news in list
+        lv = (ListView) findViewById(R.id.listView);
+        mEmptyStateTextView = (TextView) findViewById(R.id.empty_view);
+        lv.setEmptyView(mEmptyStateTextView);
+        // create adapter
+        NewsAdapter newsAdapter = new NewsAdapter(this, newsList);
+        // Assign adapter to ListView
+        lv.setAdapter(newsAdapter);
+
+        // a Navigation View consisting of a sliding drawer made up of a header and a menu
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
+
+        // Check if there is an internet connection
+        if (!networkUp()) {
+            // Update empty state with no connection error message
+            mEmptyStateTextView.setText(R.string.no_internet_connection);
+            mEmptyStateTextView.setVisibility(View.VISIBLE);
+        }
     }
 
 
+    @Override
+    protected void onSaveInstanceState(Bundle savedInstanceState) {
+        // Call the super method so that the states of our views are saved
+        super.onSaveInstanceState(savedInstanceState);
+        // Save local vars
+        savedInstanceState.putParcelableArrayList("NEWSLIST", newsList);
 
+    }
+
+
+    private boolean networkUp() {
+        ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+        return (activeNetwork != null && activeNetwork.isConnectedOrConnecting());
+    }
     @Override
     public void onBackPressed() {
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
