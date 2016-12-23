@@ -20,10 +20,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
-import android.widget.ImageView;
 import android.widget.TextView;
-
-import com.bumptech.glide.Glide;
 
 import java.util.List;
 
@@ -71,13 +68,8 @@ public class NewsAdapter extends ArrayAdapter<News> {
         titleView.setText(currentNews.title);
 
         // Use url for image to get Glide to retrieve and display small image
-        ImageView imageView = (ImageView) listItemView.findViewById(R.id.image);
-        Glide.with(getContext()).load(currentNews.url).into(imageView);
-
-        // Find the TextView with view "author"
-        TextView authorView = (TextView) listItemView.findViewById(R.id.author);
-        // Display the author of the current news in that TextView
-        authorView.setText(currentNews.author);
+//        ImageView imageView = (ImageView) listItemView.findViewById(R.id.image);
+//        Glide.with(getContext()).load(currentNews.url).into(imageView);
 
         // Find the TextView with view "date"
         TextView dateView = (TextView) listItemView.findViewById(R.id.date);

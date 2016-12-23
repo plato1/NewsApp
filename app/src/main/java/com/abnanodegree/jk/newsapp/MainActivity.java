@@ -1,6 +1,8 @@
 package com.abnanodegree.jk.newsapp;
 
+import android.app.LoaderManager;
 import android.content.Context;
+import android.content.Loader;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Bundle;
@@ -19,17 +21,31 @@ import android.widget.ListView;
 import android.widget.TextView;
 
 import java.util.ArrayList;
+import java.util.List;
+
+//import android.support.v4.app.LoaderManager;
+//import android.support.v4.content.Loader;
+
+//import android.content.Loader;
 
 /**
  * https://lab.getbase.com/introduction-to-coordinator-layout-on-android/
  * https://github.com/saulmm/CoordinatorBehaviorExample
  *http://saulmm.github.io/mastering-coordinator
+ * https://developer.android.com/guide/components/loaders.html
+ * http://www.androiddesignpatterns.com/2012/07/understanding-loadermanager.html
  */
 
 public class MainActivity extends AppCompatActivity
-    implements NavigationView.OnNavigationItemSelectedListener {
+    implements NavigationView.OnNavigationItemSelectedListener, LoaderManager.LoaderCallbacks<List<News>> {
 
     private static final String LOG_TAG = MainActivity.class.getSimpleName();
+
+    // replace STRING with query string recieved from user
+    private static final String GNEWS_REQUEST_URL =
+            "https://content.guardianapis.com/search?STRING&show-fields=body&api-key=test";
+    private String queryString;
+
     // create empty arraylist of Book objects into which queried book titles will be placed
     private ArrayList<News> newsList;
 
@@ -38,6 +54,18 @@ public class MainActivity extends AppCompatActivity
     private ListView lv;
     //TextView that is displayed when the list is empty...managed by listview
     private TextView mEmptyStateTextView;
+
+    /** Adapter for the list of newses */
+    private NewsAdapter newsAdapter;
+    /**
+     * Constant value for the earthquake loader ID. We can choose any integer.
+     * This really only comes into play if you're using multiple loaders.
+     */
+    private static final int EARTHQUAKE_LOADER_ID = 1;
+    // Get a reference to the LoaderManager, in order to interact with loaders.
+    private android.app.LoaderManager loaderManager;
+    // The callbacks through which we will interact with the LoaderManager.
+    private android.app.LoaderManager.LoaderCallbacks<List<News>> mCallbacks;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -57,7 +85,7 @@ public class MainActivity extends AppCompatActivity
         mEmptyStateTextView = (TextView) findViewById(R.id.empty_view);
         lv.setEmptyView(mEmptyStateTextView);
         // create adapter
-        NewsAdapter newsAdapter = new NewsAdapter(this, newsList);
+        newsAdapter = new NewsAdapter(this, newsList);
         // Assign adapter to ListView
         lv.setAdapter(newsAdapter);
 
@@ -71,6 +99,20 @@ public class MainActivity extends AppCompatActivity
             mEmptyStateTextView.setText(R.string.no_internet_connection);
             mEmptyStateTextView.setVisibility(View.VISIBLE);
         }
+
+        // The Activity (which implements the LoaderCallbacks<Cursor>
+        // interface) is the callbacks object through which we will interact
+        // with the LoaderManager. The LoaderManager uses this object to
+        // instantiate the Loader and to notify the client when data is made
+        // available/unavailable.
+        mCallbacks = this;
+
+        // Get a reference to the LoaderManager, in order to interact with loaders.
+        loaderManager = getLoaderManager();
+        // Initialize the loader. Pass in the int ID constant defined above and pass in null for
+        // the bundle. Pass in this activity for the LoaderCallbacks parameter (which is valid
+        // because this activity implements the LoaderCallbacks interface).
+//        loaderManager.initLoader(EARTHQUAKE_LOADER_ID, null, mCallbacks);
     }
 
 
@@ -89,6 +131,7 @@ public class MainActivity extends AppCompatActivity
         NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
         return (activeNetwork != null && activeNetwork.isConnectedOrConnecting());
     }
+
     @Override
     public void onBackPressed() {
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
@@ -98,6 +141,40 @@ public class MainActivity extends AppCompatActivity
             super.onBackPressed();
         }
     }
+
+
+
+    @Override
+    public Loader<List<News>> onCreateLoader(int i, Bundle bundle) {
+
+        return new NewsLoader(this, queryString);
+    }
+
+    @Override
+    public void onLoadFinished(Loader<List<News>> loader, List<News> newses) {
+        // Hide loading indicator because the data has been loaded
+        View loadingIndicator = findViewById(R.id.loading_indicator);
+        loadingIndicator.setVisibility(View.GONE);
+
+        // Set empty state text to display "No earthquakes found."
+        mEmptyStateTextView.setText(R.string.no_news);
+
+        // Clear the adapter of previous earthquake data
+        newsAdapter.clear();
+
+        // If there is a valid list of {@link Earthquake}s, then add them to the adapter's
+        // data set. This will trigger the ListView to update.
+        if (newses != null && !newses.isEmpty()) {
+            newsAdapter.addAll(newses);
+        }
+    }
+
+    @Override
+    public void onLoaderReset(Loader<List<News>> loader) {
+        // Loader reset, so we can clear out our existing data.
+        newsAdapter.clear();
+    }
+
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -113,7 +190,32 @@ public class MainActivity extends AppCompatActivity
                 // moved searchView var from this method into the class variable (global)
                 // must manually release focus that is on searchView...else keyboard will cover part of ui view
                 searchView.clearFocus();
-                return false;
+                if (query.length() > 0) {
+                    // clear current arraylist of all elements in prep for new search string
+                    // garbage collector will automatically reclaim freed memory
+                    newsList.clear();
+                    // check that network is available....if not inform user
+                    if (!networkUp()) {
+                        // Update empty state with no connection error message
+                        mEmptyStateTextView.setText(R.string.no_internet_connection);
+                        mEmptyStateTextView.setVisibility(View.VISIBLE);
+                        return false;
+                    }
+                    else {
+                        mEmptyStateTextView.setVisibility(View.GONE);
+                    }
+                    // Build query string
+                    queryString = GNEWS_REQUEST_URL;
+                    queryString = queryString.replace("STRING",query);
+
+                    // Initialize the loader. Pass in the int ID constant defined above and pass in null for
+                    // the bundle. Pass in this activity for the LoaderCallbacks parameter (which is valid
+                    // because this activity implements the LoaderCallbacks interface).
+           //         loaderManager.initLoader(EARTHQUAKE_LOADER_ID, null, mCallbacks);
+                    loaderManager.restartLoader(EARTHQUAKE_LOADER_ID, null, mCallbacks);
+                    return true;
+                } else
+                    return false;
             }
 
             @Override

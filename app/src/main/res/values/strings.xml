@@ -7,7 +7,7 @@
     <string name="action_settings">Settings</string>
     <!-- Error message when there is no internet connectivity [CHAR LIMIT=NONE] -->
     <string name="no_internet_connection">No internet connection.</string>
-    <!-- Text to display in the list when there are no books [CHAR LIMIT=NONE] -->
-    <string name="no_books">No books found.</string>
+    <!-- Text to display in the list when there is no news [CHAR LIMIT=NONE] -->
+    <string name="no_news">No news found.</string>
 </resources>
 

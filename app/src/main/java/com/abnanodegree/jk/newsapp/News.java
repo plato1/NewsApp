@@ -36,8 +36,6 @@ public class News implements Parcelable {
      * date News published
      */
     public final String publishedDate;
-
-    public final String author;
     public final String url;
 
 
@@ -45,21 +43,18 @@ public class News implements Parcelable {
      * Constructs a new {@link News}.
      *
      * @param NewsTitle         is the title of the News
-     * @param NewsAuthor        is 1st author of News
      * @param NewsPublishedDate is date News published
      * @param SectionName       is name of section where article appears
      */
-    public News(String NewsTitle, String NewsAuthor, String NewsPublishedDate, String SectionName, String NewsThumbnail) {
+    public News(String NewsTitle, String NewsPublishedDate, String SectionName, String NewsUrl) {
         title = NewsTitle;
-        author = NewsAuthor;
         publishedDate = NewsPublishedDate;
         sectionName = SectionName;
-        url = NewsThumbnail;
+        url = NewsUrl;
     }
 
     private News(Parcel in) {
         title = in.readString();
-        author = in.readString();
         publishedDate = in.readString();
         sectionName = in.readString();
         url = in.readString();
@@ -71,13 +66,12 @@ public class News implements Parcelable {
     }
 
     public String toString() {
-        return title + "--" + author + "--" + publishedDate + "--" + sectionName + "--" + url;
+        return title + "--" + "--" + publishedDate + "--" + sectionName + "--" + url;
     }
 
     @Override
     public void writeToParcel(Parcel parcel, int i) {
         parcel.writeString(title);
-        parcel.writeString(author);
         parcel.writeString(publishedDate);
         parcel.writeString(sectionName);
         parcel.writeString(url);
